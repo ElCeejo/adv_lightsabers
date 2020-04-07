@@ -74,13 +74,13 @@ function adv_lightsabers:register_lightsaber_entity(type,color)
         local dist = vector.distance(pos,owner_pos)
         for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
             if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
-                entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = damage}},nil)
+                entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
             end
             local luaentity = entity:get_luaentity() -- Punch Mob
             if luaentity and not self.removing then
                 if luaentity.name ~= self.object:get_luaentity().name then
                     if entity:get_armor_groups().fleshy then
-                        entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = damage}},nil)
+                        entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
                     end
                 end
             end
@@ -104,7 +104,7 @@ function adv_lightsabers:register_lightsaber_entity(type,color)
     local function punch_entities(self,pos) -- Punch Players and Entities
         for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
             if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
-                entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = damage}},nil)
+                entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
                 return_to_owner(self,pos)
                 return
             end
@@ -112,7 +112,7 @@ function adv_lightsabers:register_lightsaber_entity(type,color)
             if luaentity and not self.removing then -- Punch Mob
                 if luaentity.name ~= self.object:get_luaentity().name then
                     if entity:get_armor_groups().fleshy then
-                        entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = damage}},nil)
+                        entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
                         return_to_owner(self,pos)
                         return
                     end
