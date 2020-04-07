@@ -26,35 +26,6 @@ function adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
     end
 end
 
-function adv_lightsabers.force_push(player,pointed_thing)
-    if not pointed_thing then return end
-    if pointed_thing.type == "object" and pointed_thing.ref:is_player() then
-        local dir = player:get_look_dir()
-        dir.y = 0.5
-        pointed_thing.ref:add_player_velocity(vector.multiply(dir,20))
-    end
-end
-
-function adv_lightsabers.force_jump(player)
-    player:add_player_velocity({x=0,y=12,z=0})
-end
-
-function adv_lightsabers.force_dash(player)
-    local dir = player:get_look_dir()
-    dir.y = dir.y * 0.1
-    player:add_player_velocity(vector.multiply(dir,25))
-end
-
-function adv_lightsabers.do_abilities(color,player,pointed_thing)
-    if color == "red" then
-        adv_lightsabers.force_dash(player,pointed_thing)
-    elseif color == "green" then
-        adv_lightsabers.force_jump(player)
-    elseif color == "blue" then
-        adv_lightsabers.force_push(player,pointed_thing)
-    end
-end
-
 function adv_lightsabers:register_lightsaber_entity(type,color)
 
     local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at current position
@@ -127,7 +98,7 @@ function adv_lightsabers:register_lightsaber_entity(type,color)
         visual_size = {x=.25,y=.25,z=.25},
         textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
         collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
-	glow = 10,
+        glow = 10,
         owner = owner,
         timer = 0,
         on_activate = function(self)
@@ -175,38 +146,21 @@ end
 
 function adv_lightsabers:register_lightsaber(type,color)
 
-
-    local ability_cooldown = {}
-
-    minetest.register_on_joinplayer(function(player)
-        ability_cooldown[player:get_player_name()] = 0.0
-    end)
-    
-    minetest.register_on_leaveplayer(function(player)
-        ability_cooldown[player:get_player_name()] = nil
-    end)
-
     -- Single Blade Lightsaber
 
     if type == "single" then
+
+        adv_lightsabers:register_lightsaber_entity(type,color)
+
         minetest.register_craftitem("adv_lightsabers:lightsaber_single_"..color.."_off", {
             description = "Lightsaber",
             inventory_image = "adv_lightsabers_hilt_single_inv.png",
             stack_max = 1,
             on_use = function(itemstack,player,pointed_thing)
-                local playername = player:get_player_name()
-                if player:get_player_control().sneak == true and ability_cooldown[player:get_player_name()] == 0  then
-                    adv_lightsabers.do_abilities(color,player,pointed_thing)
-                    ability_cooldown[playername] = 5
-				    minetest.after(ability_cooldown[playername],function(playername)
-						ability_cooldown[playername] = 0.0
-				    end, playername)
-                else
-                    local activate = "adv_lightsabers_activate"
-                    itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_on")
-                    adv_lightsabers.play_sound(player,activate)
-                    return itemstack
-                end
+                local activate = "adv_lightsabers_activate"
+                itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_on")
+                adv_lightsabers.play_sound(player,activate)
+                return itemstack
             end,
         })
 
@@ -222,10 +176,22 @@ function adv_lightsabers:register_lightsaber(type,color)
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
             end,
             on_secondary_use = function(itemstack,player,pointed_thing)
-                local deactivate = "adv_lightsabers_deactivate"
-                itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_off")
-                adv_lightsabers.play_sound(player,deactivate)
-                return itemstack
+                if player:get_player_control().sneak == true then
+                    local playername = player:get_player_name()
+                    if force_ability[playername] == "saber_throw" then
+                        adv_lightsabers:saber_throw(itemstack,player,type,color)
+                        ability_cooldown[playername] = 5
+                        minetest.after(ability_cooldown[playername],function(playername)
+                            ability_cooldown[playername] = 0.0
+                        end, playername)
+                        return itemstack
+                    end
+                else
+                    local deactivate = "adv_lightsabers_deactivate"
+                    itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_off")
+                    adv_lightsabers.play_sound(player,deactivate)
+                    return itemstack
+                end
             end,
             on_place = function(itemstack,player,pointed_thing)
                 local deactivate = "adv_lightsabers_deactivate"
@@ -240,6 +206,9 @@ function adv_lightsabers:register_lightsaber(type,color)
     -- Crossguarded Lightsaber
 
     if type == "cross" then
+
+        adv_lightsabers:register_lightsaber_entity(type,color)
+
         minetest.register_craftitem("adv_lightsabers:lightsaber_cross_"..color.."_off", {
             description = "Crossguarded Lightsaber",
             inventory_image = "adv_lightsabers_hilt_cross_inv.png",
@@ -264,10 +233,22 @@ function adv_lightsabers:register_lightsaber(type,color)
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
             end,
             on_secondary_use = function(itemstack,player,pointed_thing)
-                local deactivate = "adv_lightsabers_deactivate_cross"
-                itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_off")
-                adv_lightsabers.play_sound(player,deactivate)
-                return itemstack
+                if player:get_player_control().sneak == true then
+                    local playername = player:get_player_name()
+                    if force_ability[playername] == "saber_throw" then
+                        adv_lightsabers:saber_throw(itemstack,player,type,color)
+                        ability_cooldown[playername] = 5
+                        minetest.after(ability_cooldown[playername],function(playername)
+                            ability_cooldown[playername] = 0.0
+                        end, playername)
+                        return itemstack
+                    end
+                else
+                    local deactivate = "adv_lightsabers_deactivate_cross"
+                    itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_off")
+                    adv_lightsabers.play_sound(player,deactivate)
+                    return itemstack
+                end
             end,
             on_place = function(itemstack,player,pointed_thing)
                 local deactivate = "adv_lightsabers_deactivate_cross"
@@ -310,8 +291,15 @@ function adv_lightsabers:register_lightsaber(type,color)
             end,
             on_secondary_use = function(itemstack,player,pointed_thing)
                 if player:get_player_control().sneak == true then
-                    adv_lightsabers:saber_throw(itemstack,player,"double",color)
-                    return itemstack
+                    local playername = player:get_player_name()
+                    if force_ability[playername] == "saber_throw" then
+                        adv_lightsabers:saber_throw(itemstack,player,type,color)
+                        ability_cooldown[playername] = 5
+                        minetest.after(ability_cooldown[playername],function(playername)
+                            ability_cooldown[playername] = 0.0
+                        end, playername)
+                        return itemstack
+                    end
                 else
                     local deactivate = "adv_lightsabers_deactivate"
                     itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_off")

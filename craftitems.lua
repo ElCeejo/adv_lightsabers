@@ -18,18 +18,6 @@ minetest.register_craftitem("adv_lightsabers:kyber_crystal", { -- Uncolored Ligh
     description = "Kyber Crystal",
 	inventory_image = "adv_lightsabers_kyber_crystal.png",
 	stack_max = 1,
-	on_use = function(itemstack,user,pointed_thing)
-		if math.random(1,3) == 1 then
-			itemstack:replace("adv_lightsabers:kyber_crystal_red")
-			return itemstack
-		elseif math.random(1,3) == 1 then
-			itemstack:replace("adv_lightsabers:kyber_crystal_green")
-			return itemstack
-		else
-			itemstack:replace("adv_lightsabers:kyber_crystal_blue")
-			return itemstack
-		end
-	end,
 })
 
 for n,color in ipairs(colors) do
