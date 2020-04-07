@@ -78,7 +78,7 @@ function force_jump(player) -- Heightened Jump
     local ability = force_ability[playername]
     if player:get_player_control().sneak == true and player:get_player_control().jump == true then
         player:add_player_velocity({x=0,y=8,z=0})
-        ability_cooldown[playername] = 5
+        ability_cooldown[playername] = 20
         minetest.after(ability_cooldown[playername],function(playername)
             ability_cooldown[playername] = 0.0
         end, playername)
@@ -94,7 +94,7 @@ function force_push(player) -- Push entities a far distance
         if pointedobject and pointedobject:is_player() then
             local dir = player:get_look_dir()
             pointedobject:add_player_velocity(vector.multiply(dir,25))
-            ability_cooldown[playername] = 5
+            ability_cooldown[playername] = 30
             minetest.after(ability_cooldown[playername],function(playername)
                 ability_cooldown[playername] = 0.0
             end, playername)
@@ -124,7 +124,7 @@ function force_choke(player) -- Lift a Player off the ground and slowly choke th
             minetest.after(7.5,function()
                 pointedobject:set_physics_override(1.0,1.0,1.0,true,true,false)
             end)
-            ability_cooldown[playername] = 5
+            ability_cooldown[playername] = 60
             minetest.after(ability_cooldown[playername],function(playername)
                 ability_cooldown[playername] = 0.0
             end, playername)
@@ -141,7 +141,7 @@ function force_dash(player) -- Give yourself a short but quick burst of speed
         local dir = player:get_look_dir()
         dir.y = dir.y * 0.1
         player:add_player_velocity(vector.multiply(dir,25))
-        ability_cooldown[playername] = 5
+        ability_cooldown[playername] = 20
         minetest.after(ability_cooldown[playername],function(playername)
             ability_cooldown[playername] = 0.0
         end, playername)
@@ -156,7 +156,7 @@ function force_heal(player) -- Heal yourself by 4 hearts
     if player:get_player_control().sneak == true and player:get_player_control().RMB then
         local hp = player:get_hp()
         player:set_hp(hp + 8)
-        ability_cooldown[playername] = 5
+        ability_cooldown[playername] = 60
         minetest.after(ability_cooldown[playername],function(playername)
             ability_cooldown[playername] = 0.0
         end, playername)
@@ -174,7 +174,7 @@ function force_stun(player) -- Freeze Players in place for 5 seconds
             minetest.after(5,function()
                 pointedobject:set_physics_override(1.0,1.0,1.0,true,true,false)
             end)
-            ability_cooldown[playername] = 5
+            ability_cooldown[playername] = 60
             minetest.after(ability_cooldown[playername],function(playername)
                 ability_cooldown[playername] = 0.0
             end, playername)
