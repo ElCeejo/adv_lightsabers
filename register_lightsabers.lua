@@ -127,6 +127,7 @@ function adv_lightsabers:register_lightsaber_entity(type,color)
         visual_size = {x=.25,y=.25,z=.25},
         textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
         collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
+	glow = 10,
         owner = owner,
         timer = 0,
         on_activate = function(self)
