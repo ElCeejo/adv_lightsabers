@@ -1,9 +1,7 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
--------- Ver 1.0 ---------
-
-local modpath, modname = ...
+------- Ver 1.0.1 --------
 
 minetest.register_node("adv_lightsabers:kyber_ore", {
 	description = "Kyber Ore",

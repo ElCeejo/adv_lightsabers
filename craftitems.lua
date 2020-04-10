@@ -1,9 +1,7 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
--------- Ver 1.0 ---------
-
-local modpath, modname = ...
+------- Ver 1.0.1 --------
 
 colors={"green","blue","red"}
 
@@ -20,7 +18,7 @@ minetest.register_craftitem("adv_lightsabers:kyber_crystal", { -- Uncolored Ligh
 	stack_max = 1,
 })
 
-for n,color in ipairs(colors) do
+for _,color in ipairs(colors) do
     for n,hilt in ipairs(hilts) do
 minetest.register_craftitem("adv_lightsabers:kyber_crystal_"..color, { -- Colored Kyber Crystal
     description = "Kyber Crystal",

@@ -1,7 +1,7 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
--------- Ver 1.0 ---------
+------- Ver 1.0.1 --------
 
 force_ability = {}
 ability_cooldown = {}
@@ -20,6 +20,16 @@ minetest.register_on_leaveplayer(function(player)
     ability_cooldown[player:get_player_name()] = nil
     force_ability[player:get_player_name()] = nil
 end)
+
+function cooldown(player,duration)
+    local playername = player:get_player_name()
+    ability_cooldown[playername] = duration
+    minetest.after(duration,function()
+        ability_cooldown[playername] = 0.0
+    end)
+    return ability_cooldown[playername]
+end
+
 
 -------------------
 -- Menu Formspec --
@@ -59,9 +69,7 @@ local function ray_pointed_thing(player)
     for pointed_thing in ray do
         if pointed_thing.type == "object" then
             local pointedobject = pointed_thing.ref
-            if pointedobject:is_player() and pointedobject:get_player_name() == player:get_player_name() then
-                pointedobject = nil
-            else
+            if pointedobject:is_player() and pointedobject:get_player_name() ~= player:get_player_name() then
                 return pointedobject
             end
         end
@@ -73,39 +81,24 @@ end
 ---------------------
 
 function force_jump(player) -- Heightened Jump
-    local playername = player:get_player_name()
-    local cooldown = ability_cooldown[playername]
-    local ability = force_ability[playername]
     if player:get_player_control().sneak == true and player:get_player_control().jump == true then
         player:add_player_velocity({x=0,y=8,z=0})
-        ability_cooldown[playername] = 20
-        minetest.after(ability_cooldown[playername],function(playername)
-            ability_cooldown[playername] = 0.0
-        end, playername)
+        cooldown(player,20)
     end
 end
 
 function force_push(player) -- Push entities a far distance
-    local playername = player:get_player_name()
-    local cooldown = ability_cooldown[playername]
-    local ability = force_ability[playername]
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
             local dir = player:get_look_dir()
             pointedobject:add_player_velocity(vector.multiply(dir,25))
-            ability_cooldown[playername] = 30
-            minetest.after(ability_cooldown[playername],function(playername)
-                ability_cooldown[playername] = 0.0
-            end, playername)
+            cooldown(player,20)
         end
     end
 end
 
 function force_choke(player) -- Lift a Player off the ground and slowly choke them
-    local playername = player:get_player_name()
-    local cooldown = ability_cooldown[playername]
-    local ability = force_ability[playername]
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
@@ -124,49 +117,31 @@ function force_choke(player) -- Lift a Player off the ground and slowly choke th
             minetest.after(7.5,function()
                 pointedobject:set_physics_override(1.0,1.0,1.0,true,true,false)
             end)
-            ability_cooldown[playername] = 60
-            minetest.after(ability_cooldown[playername],function(playername)
-                ability_cooldown[playername] = 0.0
-            end, playername)
+            cooldown(player,20)
         end
     end
 end
 
 function force_dash(player) -- Give yourself a short but quick burst of speed
-    local playername = player:get_player_name()
-    local cooldown = ability_cooldown[playername]
-    local ability = force_ability[playername]
-    local pointedobject = ray_pointed_thing(player)
-    if player:get_player_control().sneak == true and player:get_player_control().up == true and player:get_player_control().down == true then
+    if player:get_player_control().sneak == true
+    and player:get_player_control().up == true
+    and player:get_player_control().down == true then
         local dir = player:get_look_dir()
         dir.y = dir.y * 0.1
         player:add_player_velocity(vector.multiply(dir,25))
-        ability_cooldown[playername] = 20
-        minetest.after(ability_cooldown[playername],function(playername)
-            ability_cooldown[playername] = 0.0
-        end, playername)
+        cooldown(player,20)
     end
 end
 
 function force_heal(player) -- Heal yourself by 4 hearts
-    local playername = player:get_player_name()
-    local cooldown = ability_cooldown[playername]
-    local ability = force_ability[playername]
-    local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().RMB then
         local hp = player:get_hp()
         player:set_hp(hp + 8)
-        ability_cooldown[playername] = 60
-        minetest.after(ability_cooldown[playername],function(playername)
-            ability_cooldown[playername] = 0.0
-        end, playername)
+        cooldown(player,20)
     end
 end
 
 function force_stun(player) -- Freeze Players in place for 5 seconds
-    local playername = player:get_player_name()
-    local cooldown = ability_cooldown[playername]
-    local ability = force_ability[playername]
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
@@ -174,10 +149,7 @@ function force_stun(player) -- Freeze Players in place for 5 seconds
             minetest.after(5,function()
                 pointedobject:set_physics_override(1.0,1.0,1.0,true,true,false)
             end)
-            ability_cooldown[playername] = 60
-            minetest.after(ability_cooldown[playername],function(playername)
-                ability_cooldown[playername] = 0.0
-            end, playername)
+            cooldown(player,20)
         end
     end
 end
@@ -190,22 +162,22 @@ function adv_lightsabers.force_menu()
     for _,player in ipairs(minetest.get_connected_players()) do
         if minetest.check_player_privs(player:get_player_name(), {force_abilities = true}) then
             local playername = player:get_player_name()
-            local cooldown = ability_cooldown[playername]
-            local ability = force_ability[playername]
-            if player:get_player_control().LMB == true and player:get_player_control().up == true and player:get_player_control().down == true then
+            if player:get_player_control().LMB == true
+            and player:get_player_control().up == true
+            and player:get_player_control().down == true then
                 adv_lightsabers.show_force_menu(player:get_player_name())
             end
-            if ability == "force_jump" and cooldown == 0.0 then
+            if force_ability[playername] == "force_jump" and ability_cooldown[playername] == 0.0 then
                 force_jump(player)
-            elseif ability == "force_push" and cooldown == 0.0 then
+            elseif force_ability[playername] == "force_push" and ability_cooldown[playername] == 0.0 then
                 force_push(player)
-            elseif ability == "force_choke" and cooldown == 0.0 then
+            elseif force_ability[playername] == "force_choke" and ability_cooldown[playername] == 0.0 then
                 force_choke(player)
-            elseif ability == "force_dash" and cooldown == 0.0 then
+            elseif force_ability[playername] == "force_dash" and ability_cooldown[playername] == 0.0 then
                 force_dash(player)
-            elseif ability == "force_heal" and cooldown == 0.0 then
+            elseif force_ability[playername] == "force_heal" and ability_cooldown[playername] == 0.0 then
                 force_heal(player)
-            elseif ability == "force_stun" and cooldown == 0.0 then
+            elseif force_ability[playername] == "force_stun" and ability_cooldown[playername] == 0.0 then
                 force_stun(player)
             end
         end
@@ -259,7 +231,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     end
     if fields.bleed then
         local playername = player:get_player_name()
-        if player:get_wielded_item():get_name() == "adv_lightsabers:kyber_crystal_blue" or player:get_wielded_item():get_name() == "adv_lightsabers:kyber_crystal_green" then
+        if player:get_wielded_item():get_name() == "adv_lightsabers:kyber_crystal_blue"
+        or player:get_wielded_item():get_name() == "adv_lightsabers:kyber_crystal_green" then
             minetest.chat_send_player(playername,"You have bled your Kyber Crystal")
             player:set_wielded_item("adv_lightsabers:kyber_crystal_red")
         end

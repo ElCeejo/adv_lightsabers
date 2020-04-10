@@ -1,19 +1,23 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
--------- Ver 1.0 ---------
-
-local modpath, modname = ...
+------- Ver 1.0.1 --------
 
 function adv_lightsabers.play_sound(player,soundfile)
-	minetest.sound_play(soundfile,{object = minetest.get_player_by_name(player:get_player_name()),gain = 1.0,max_hear_distance = 32,loop = false })
+	minetest.sound_play(soundfile,{
+        object = minetest.get_player_by_name(player:get_player_name()),
+        gain = 1.0,
+        max_hear_distance = 32,
+        loop = false,
+    })
 end
 
 function adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
     adv_lightsabers.play_sound(player,swing)
     if pointed_thing.type == "object" and pointed_thing.ref:is_player() then
         local pointed_weapon = pointed_thing.ref:get_wielded_item():get_name()
-        if minetest.registered_items[pointed_weapon].groups.lightsaber == 1 and pointed_thing.ref:get_player_control().LMB == true then
+        if minetest.registered_items[pointed_weapon].groups.lightsaber == 1
+        and pointed_thing.ref:get_player_control().LMB == true then
             adv_lightsabers.play_sound(player,clash)
         else
             pointed_thing.ref:punch(player,1.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 8}},nil)
@@ -26,112 +30,114 @@ function adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
     end
 end
 
-function adv_lightsabers:register_lightsaber_entity(type,color)
+colors={"green","blue","red"}
 
-    local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at current position
-        for _,player in pairs(minetest.get_objects_inside_radius(pos,1.5)) do
-            if player:is_player() and player:get_player_name() == self.owner then
-                return true, player
-            end
+hilts={"single","cross","double"}
+
+for _,color in ipairs(colors) do
+    for n,type in ipairs(hilts) do
+local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at current position
+    for _,player in pairs(minetest.get_objects_inside_radius(pos,1.5)) do
+        if player:is_player() and player:get_player_name() == self.owner then
+            return true, player
         end
     end
+end
 
-    local function return_to_owner(self,pos) -- Return to Owner
-        local owner = minetest.get_player_by_name(self.owner)
-        local owner_pos = owner:get_pos()
-        local node = minetest.get_node_or_nil(owner_pos)
-        owner_pos.y = owner_pos.y + 1
-        local dir = vector.direction(pos,owner_pos)
-        local dist = vector.distance(pos,owner_pos)
-        for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
-            if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
-                entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-            end
-            local luaentity = entity:get_luaentity() -- Punch Mob
-            if luaentity and not self.removing then
-                if luaentity.name ~= self.object:get_luaentity().name then
-                    if entity:get_armor_groups().fleshy then
-                        entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-                    end
+local function return_to_owner(self,pos) -- Return to Owner
+    local owner = minetest.get_player_by_name(self.owner)
+    local owner_pos = owner:get_pos()
+    owner_pos.y = owner_pos.y + 1
+    local dir = vector.direction(pos,owner_pos)
+    for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
+        if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
+            entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
+        end
+        local luaentity = entity:get_luaentity() -- Punch Mob
+        if luaentity and not self.removing then
+            if luaentity.name ~= self.object:get_luaentity().name then
+                if entity:get_armor_groups().fleshy then
+                    entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
                 end
             end
         end
-        self.returning_to_owner = true
-        self.object:set_velocity(vector.multiply(dir,15))
-        local get_owner, player = is_owner_at_pos(self,pos)
+    end
+    self.returning_to_owner = true
+    self.object:set_velocity(vector.multiply(dir,15))
+    local get_owner, player = is_owner_at_pos(self,pos)
+    if get_owner then
+        self.removing = true
+        if player:get_wielded_item():get_name() == "" then
+            player:set_wielded_item("adv_lightsabers:lightsaber_"..type.."_"..color.."_on")
+            self.object:remove()
+        else
+            self.object:remove()
+            minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+        end
+    end
+end
+
+local function punch_entities(self,pos) -- Punch Players and Entities
+    for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
+        if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
+            entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
+            return_to_owner(self,pos)
+            return
+        end
+        local luaentity = entity:get_luaentity()
+        if luaentity and not self.removing then -- Punch Mob
+            if luaentity.name ~= self.object:get_luaentity().name then
+                if entity:get_armor_groups().fleshy then
+                    entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
+                    return_to_owner(self,pos)
+                    return
+                end
+            end
+        end
+    end
+end
+
+minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent", { -- Register entity
+    physical = false,
+    visual = "wielditem",
+    visual_size = {x=.25,y=.25,z=.25},
+    textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
+    collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
+    glow = 10,
+    owner = {},
+    timer = 0,
+    on_activate = function(self)
+        self.object:set_armor_groups({immortal=1})
+        local pos = self.object:get_pos()
+        for _,player in pairs(minetest.get_objects_inside_radius(pos,1.0)) do
+            if player:is_player() then
+                local name = player:get_player_name()
+                self.owner = name
+            end
+        end
+        local rot = self.object:get_rotation()
+        self.object:set_rotation({x=rot.x,y=rot.y,z=-40})
+        if self.owner == nil then
+            self.object:remove()
+            minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+        end
+    end,
+    on_step = function(self)
+        local pos = self.object:get_pos()
+        self.timer = self.timer + 1
+        local rot = self.object:get_rotation()
+        self.object:set_rotation({x=rot.x,y=self.timer,z=rot.z})
+        if self.timer >= 35 and self.owner ~= nil then
+            return_to_owner(self,pos)
+        end
+        punch_entities(self,pos)
         local node = minetest.get_node_or_nil(pos)
-        if get_owner then
-            self.removing = true
-            if player:get_wielded_item():get_name() == "" then
-                player:set_wielded_item("adv_lightsabers:lightsaber_"..type.."_"..color.."_on")
-                self.object:remove()
-            else
-                self.object:remove()
-                minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-            end             
+        if minetest.registered_nodes[node.name].walkable then
+            return_to_owner(self,pos)
         end
+    end,
+})
     end
-
-    local function punch_entities(self,pos) -- Punch Players and Entities
-        for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
-            if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
-                entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-                return_to_owner(self,pos)
-                return
-            end
-            local luaentity = entity:get_luaentity()
-            if luaentity and not self.removing then -- Punch Mob
-                if luaentity.name ~= self.object:get_luaentity().name then
-                    if entity:get_armor_groups().fleshy then
-                        entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-                        return_to_owner(self,pos)
-                        return
-                    end
-                end
-            end
-        end
-    end
-
-    minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent", { -- Register entity
-        physical = false,
-        visual = "wielditem",
-        visual_size = {x=.25,y=.25,z=.25},
-        textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
-        collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
-        glow = 10,
-        owner = owner,
-        timer = 0,
-        on_activate = function(self)
-            self.object:set_armor_groups({immortal=1})
-            local pos = self.object:get_pos()
-            for _,player in pairs(minetest.get_objects_inside_radius(pos,1.0)) do
-                if player:is_player() then
-                    local name = player:get_player_name()
-                    self.owner = name
-                end
-            end
-            local rot = self.object:get_rotation()
-            self.object:set_rotation({x=rot.x,y=rot.y,z=-40})
-            if self.owner == nil then
-                self.object:remove()
-                minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-            end
-        end,
-        on_step = function(self)
-            local pos = self.object:get_pos()
-            self.timer = self.timer + 1
-            local rot = self.object:get_rotation()
-            self.object:set_rotation({x=rot.x,y=self.timer,z=rot.z})
-            if self.timer >= 35 and self.owner ~= nil then
-                return_to_owner(self,pos)
-            end
-            punch_entities(self,pos)
-            local node = minetest.get_node_or_nil(pos)
-            if minetest.registered_nodes[node.name].walkable then
-                return_to_owner(self,pos)
-            end
-        end,
-    })
 end
 
 function adv_lightsabers:saber_throw(itemstack,player,type,color)
@@ -149,8 +155,6 @@ function adv_lightsabers:register_lightsaber(type,color)
     -- Single Blade Lightsaber
 
     if type == "single" then
-
-        adv_lightsabers:register_lightsaber_entity(type,color)
 
         minetest.register_craftitem("adv_lightsabers:lightsaber_single_"..color.."_off", {
             description = "Lightsaber",
@@ -180,10 +184,6 @@ function adv_lightsabers:register_lightsaber(type,color)
                     local playername = player:get_player_name()
                     if force_ability[playername] == "saber_throw" then
                         adv_lightsabers:saber_throw(itemstack,player,type,color)
-                        ability_cooldown[playername] = 5
-                        minetest.after(ability_cooldown[playername],function(playername)
-                            ability_cooldown[playername] = 0.0
-                        end, playername)
                         return itemstack
                     end
                 else
@@ -206,8 +206,6 @@ function adv_lightsabers:register_lightsaber(type,color)
     -- Crossguarded Lightsaber
 
     if type == "cross" then
-
-        adv_lightsabers:register_lightsaber_entity(type,color)
 
         minetest.register_craftitem("adv_lightsabers:lightsaber_cross_"..color.."_off", {
             description = "Crossguarded Lightsaber",
@@ -237,10 +235,6 @@ function adv_lightsabers:register_lightsaber(type,color)
                     local playername = player:get_player_name()
                     if force_ability[playername] == "saber_throw" then
                         adv_lightsabers:saber_throw(itemstack,player,type,color)
-                        ability_cooldown[playername] = 5
-                        minetest.after(ability_cooldown[playername],function(playername)
-                            ability_cooldown[playername] = 0.0
-                        end, playername)
                         return itemstack
                     end
                 else
@@ -263,8 +257,6 @@ function adv_lightsabers:register_lightsaber(type,color)
     --  Double Bladed Lightsaber
 
     if type == "double" then
-
-        adv_lightsabers:register_lightsaber_entity(type,color)
 
         minetest.register_craftitem("adv_lightsabers:lightsaber_double_"..color.."_off", {
             description = "Double Bladed Lightsaber",
@@ -295,9 +287,6 @@ function adv_lightsabers:register_lightsaber(type,color)
                     if force_ability[playername] == "saber_throw" then
                         adv_lightsabers:saber_throw(itemstack,player,type,color)
                         ability_cooldown[playername] = 5
-                        minetest.after(ability_cooldown[playername],function(playername)
-                            ability_cooldown[playername] = 0.0
-                        end, playername)
                         return itemstack
                     end
                 else

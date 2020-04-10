@@ -1,9 +1,7 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
--------- Ver 1.0 ---------
-
-local modpath, modname = ...
+------- Ver 1.0.1 --------
 
 colors={"green","blue","red"}
 
