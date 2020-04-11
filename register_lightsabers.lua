@@ -44,10 +44,11 @@ local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at curr
     end
 end
 
+
 local function return_to_owner(self,pos) -- Return to Owner
     local owner = minetest.get_player_by_name(self.owner)
-    local t = type(owner)
     local owner_pos = owner:get_pos()
+    local t = type(tostring{owner})
     owner_pos.y = owner_pos.y + 1
     local dir = vector.direction(pos,owner_pos)
     if self.owner == nil then
@@ -57,6 +58,7 @@ local function return_to_owner(self,pos) -- Return to Owner
     if t ~= "string" then
         self.object:remove()
         minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+        return
     end
     for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
         if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
@@ -136,12 +138,16 @@ minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent"
         self.timer = self.timer + 1
         local rot = self.object:get_rotation()
         self.object:set_rotation({x=rot.x,y=self.timer,z=rot.z})
+        if self.owner == nil then
+            self.object:remove()
+            minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+        end
         if self.timer >= 35 and self.owner ~= nil then
             return_to_owner(self,pos)
         end
         punch_entities(self,pos)
         local node = minetest.get_node_or_nil(pos)
-        if minetest.registered_nodes[node.name].walkable then
+        if node and minetest.registered_nodes[node.name].walkable then
             return_to_owner(self,pos)
         end
     end,
