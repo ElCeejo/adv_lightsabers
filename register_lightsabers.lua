@@ -34,8 +34,18 @@ colors={"green","blue","red"}
 
 hilts={"single","cross","double"}
 
+
 for _,color in ipairs(colors) do
     for n,type in ipairs(hilts) do
+
+local function remove_self(self,pos) -- Remove lightsaber
+    self.removing = true
+    self.object:remove()
+    if not self.returned then
+        minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+    end
+end
+
 local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at current position
     for _,player in pairs(minetest.get_objects_inside_radius(pos,1.5)) do
         if player:is_player() and player:get_player_name() == self.owner then
@@ -44,22 +54,12 @@ local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at curr
     end
 end
 
-
 local function return_to_owner(self,pos) -- Return to Owner
     local owner = minetest.get_player_by_name(self.owner)
+    if not owner or self.owner == nil then remove_self(self,pos) return end
     local owner_pos = owner:get_pos()
-    local t = type(tostring(owner))
     owner_pos.y = owner_pos.y + 1
     local dir = vector.direction(pos,owner_pos)
-    if self.owner == nil then
-        self.object:remove()
-        minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-    end
-    if t ~= "string" then
-        self.object:remove()
-        minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-        return
-    end
     for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
         if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
             entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
@@ -80,10 +80,10 @@ local function return_to_owner(self,pos) -- Return to Owner
         self.removing = true
         if player:get_wielded_item():get_name() == "" then
             player:set_wielded_item("adv_lightsabers:lightsaber_"..type.."_"..color.."_on")
+            self.returned = true
             self.object:remove()
-        else
-            self.object:remove()
-            minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+        elseif player:get_wielded_item():get_name() ~= "" then
+            remove_self(self,pos)
         end
     end
 end
@@ -105,53 +105,6 @@ local function punch_entities(self,pos) -- Punch Players and Entities
                 end
             end
         end
-    end
-end
-
-minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent", { -- Register entity
-    physical = false,
-    visual = "wielditem",
-    visual_size = {x=.25,y=.25,z=.25},
-    textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
-    collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
-    glow = 10,
-    owner = {},
-    timer = 0,
-    on_activate = function(self)
-        self.object:set_armor_groups({immortal=1})
-        local pos = self.object:get_pos()
-        for _,player in pairs(minetest.get_objects_inside_radius(pos,1.0)) do
-            if player:is_player() then
-                local name = player:get_player_name()
-                self.owner = name
-            end
-        end
-        local rot = self.object:get_rotation()
-        self.object:set_rotation({x=rot.x,y=rot.y,z=-40})
-        if self.owner == nil then
-            self.object:remove()
-            minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-        end
-    end,
-    on_step = function(self)
-        local pos = self.object:get_pos()
-        self.timer = self.timer + 1
-        local rot = self.object:get_rotation()
-        self.object:set_rotation({x=rot.x,y=self.timer,z=rot.z})
-        if self.owner == nil then
-            self.object:remove()
-            minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-        end
-        if self.timer >= 35 and self.owner ~= nil then
-            return_to_owner(self,pos)
-        end
-        punch_entities(self,pos)
-        local node = minetest.get_node_or_nil(pos)
-        if node and minetest.registered_nodes[node.name].walkable then
-            return_to_owner(self,pos)
-        end
-    end,
-})
     end
 end
 
