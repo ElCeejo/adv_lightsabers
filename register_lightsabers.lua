@@ -48,7 +48,7 @@ end
 local function return_to_owner(self,pos) -- Return to Owner
     local owner = minetest.get_player_by_name(self.owner)
     local owner_pos = owner:get_pos()
-    local t = type(tostring{owner})
+    local t = type(tostring(owner))
     owner_pos.y = owner_pos.y + 1
     local dir = vector.direction(pos,owner_pos)
     if self.owner == nil then
