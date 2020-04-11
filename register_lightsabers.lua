@@ -46,10 +46,15 @@ end
 
 local function return_to_owner(self,pos) -- Return to Owner
     local owner = minetest.get_player_by_name(self.owner)
+    local t = type(owner)
     local owner_pos = owner:get_pos()
     owner_pos.y = owner_pos.y + 1
     local dir = vector.direction(pos,owner_pos)
     if self.owner == nil then
+        self.object:remove()
+        minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+    end
+    if t ~= "string" then
         self.object:remove()
         minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
     end
