@@ -1,7 +1,7 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
-------- Ver 1.0.1 --------
+------- Ver 1.1 ----------
 
 force_ability = {}
 ability_cooldown = {}

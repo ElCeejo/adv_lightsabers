@@ -1,13 +1,13 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
-------- Ver 1.0.1 --------
+------- Ver 1.1 ----------
 
 function adv_lightsabers.play_sound(player,soundfile)
 	minetest.sound_play(soundfile,{
         object = minetest.get_player_by_name(player:get_player_name()),
         gain = 1.0,
-        max_hear_distance = 32,
+        max_hear_distance = 24,
         loop = false,
     })
 end
@@ -34,9 +34,25 @@ colors={"green","blue","red"}
 
 hilts={"single","cross","double"}
 
-
 for _,color in ipairs(colors) do
     for n,type in ipairs(hilts) do
+
+local t = 0
+
+minetest.register_globalstep(function(dtime) -- Idle Hum/Crackle
+    t=t+dtime
+    if t>1.45 then
+        for _,player in ipairs(minetest.get_connected_players()) do
+            if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_cross_"..color.."_on" then
+                adv_lightsabers.play_sound(player,"adv_lightsabers_idle_cross")
+            elseif player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_single_"..color.."_on"
+            or player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_double_"..color.."_on" then
+                adv_lightsabers.play_sound(player,"adv_lightsabers_idle")
+            end
+        end
+        t=0
+    end
+end)
 
 local function remove_self(self,pos) -- Remove lightsaber
     self.removing = true

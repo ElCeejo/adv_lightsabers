@@ -1,9 +1,7 @@
 --------------------------
 -- Advanced Lightsabers --
 --------------------------
-------- Ver 1.0.1 --------
-
-colors={"green","blue","red"}
+------- Ver 1.1 ----------
 
 -- Red Single Blade Lightsaber --
 
