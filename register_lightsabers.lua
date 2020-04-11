@@ -49,6 +49,10 @@ local function return_to_owner(self,pos) -- Return to Owner
     local owner_pos = owner:get_pos()
     owner_pos.y = owner_pos.y + 1
     local dir = vector.direction(pos,owner_pos)
+    if self.owner == nil then
+        self.object:remove()
+        minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
+    end
     for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
         if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
             entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
