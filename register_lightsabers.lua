@@ -41,7 +41,7 @@ local t = 0
 
 minetest.register_globalstep(function(dtime) -- Idle Hum/Crackle
     t=t+dtime
-    if t>1.45 then
+    if t>1.3 then
         for _,player in ipairs(minetest.get_connected_players()) do
             if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_cross_"..color.."_on" then
                 adv_lightsabers.play_sound(player,"adv_lightsabers_idle_cross")
