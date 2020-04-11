@@ -70,7 +70,7 @@ local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at curr
     end
 end
 
-local function return_to_owner(self,pos) -- Return to Owner
+local function return_to_owner(self,pos,vel) -- Return to Owner
     local owner = minetest.get_player_by_name(self.owner)
     if not owner or self.owner == nil then remove_self(self,pos) return end
     local owner_pos = owner:get_pos()
@@ -90,7 +90,7 @@ local function return_to_owner(self,pos) -- Return to Owner
         end
     end
     self.returning_to_owner = true
-    self.object:set_velocity(vector.multiply(dir,15))
+    self.object:set_velocity(vector.multiply(dir,vel or 15))
     local get_owner, player = is_owner_at_pos(self,pos)
     if get_owner then
         self.removing = true
@@ -104,11 +104,15 @@ local function return_to_owner(self,pos) -- Return to Owner
     end
 end
 
-local function punch_entities(self,pos) -- Punch Players and Entities
+local function punch_entities(self,pos,dist) -- Punch Players and Entities
     for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
         if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
             entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-            return_to_owner(self,pos)
+            if dist > 10 then
+                return_to_owner(self,pos,15)
+            else
+                return_to_owner(self,pos,7.5)
+            end
             return
         end
         local luaentity = entity:get_luaentity()
@@ -116,7 +120,11 @@ local function punch_entities(self,pos) -- Punch Players and Entities
             if luaentity.name ~= self.object:get_luaentity().name then
                 if entity:get_armor_groups().fleshy then
                     entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-                    return_to_owner(self,pos)
+                    if dist > 10 then
+                        return_to_owner(self,pos,15)
+                    else
+                        return_to_owner(self,pos,7.5)
+                    end
                     return
                 end
             end
@@ -148,17 +156,27 @@ minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent"
     end,
     on_step = function(self)
         local pos = self.object:get_pos()
+        local owner = minetest.get_player_by_name(self.owner)
+        if not owner or self.owner == nil then remove_self(self,pos) return end
         self.timer = self.timer + 1
         local rot = self.object:get_rotation()
-        self.object:set_rotation({x=rot.x,y=self.timer,z=rot.z})
-        if self.owner == nil then remove_self(self,pos) return end
+        local dist = vector.distance(pos,owner:get_pos())
+        self.object:set_rotation({x=rot.x,y=rot.y+1,z=rot.z})
         if self.timer >= 35 and self.owner ~= nil then
-            return_to_owner(self,pos)
+            if dist > 10 then
+                return_to_owner(self,pos,15)
+            else
+                return_to_owner(self,pos,7.5)
+            end
         end
-        punch_entities(self,pos)
+        punch_entities(self,pos,dist)
         local node = minetest.get_node_or_nil(pos)
         if node and minetest.registered_nodes[node.name].walkable then
-            return_to_owner(self,pos)
+            if dist > 10 then
+                return_to_owner(self,pos,15)
+            else
+                return_to_owner(self,pos,7.5)
+            end
         end
     end,
 })
