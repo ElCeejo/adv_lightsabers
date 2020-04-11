@@ -108,6 +108,47 @@ local function punch_entities(self,pos) -- Punch Players and Entities
     end
 end
 
+minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent", { -- Register entity
+    physical = false,
+    visual = "wielditem",
+    visual_size = {x=.25,y=.25,z=.25},
+    textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
+    collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
+    glow = 10,
+    owner = "",
+    timer = 0,
+    on_activate = function(self)
+        self.object:set_armor_groups({immortal=1})
+        local pos = self.object:get_pos()
+        for _,player in pairs(minetest.get_objects_inside_radius(pos,1.0)) do
+            if player:is_player() then
+                local name = player:get_player_name()
+                self.owner = name
+            end
+        end
+        local rot = self.object:get_rotation()
+        self.object:set_rotation({x=rot.x,y=rot.y,z=-40})
+        if self.owner == nil then remove_self(self,pos) return end
+    end,
+    on_step = function(self)
+        local pos = self.object:get_pos()
+        self.timer = self.timer + 1
+        local rot = self.object:get_rotation()
+        self.object:set_rotation({x=rot.x,y=self.timer,z=rot.z})
+        if self.owner == nil then remove_self(self,pos) return end
+        if self.timer >= 35 and self.owner ~= nil then
+            return_to_owner(self,pos)
+        end
+        punch_entities(self,pos)
+        local node = minetest.get_node_or_nil(pos)
+        if node and minetest.registered_nodes[node.name].walkable then
+            return_to_owner(self,pos)
+        end
+    end,
+})
+    end
+end
+
 function adv_lightsabers:saber_throw(itemstack,player,type,color)
     local pos = player:get_pos()
 	pos.y = pos.y + 1
