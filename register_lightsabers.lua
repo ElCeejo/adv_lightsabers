@@ -3,6 +3,12 @@
 --------------------------
 ------- Ver 1.1 ----------
 
+player_armor = {}
+
+minetest.register_on_joinplayer(function(player)
+    player_armor[player:get_player_name()] = player:get_armor_groups()
+end)
+
 function adv_lightsabers.play_sound(player,soundfile)
 	minetest.sound_play(soundfile,{
         object = minetest.get_player_by_name(player:get_player_name()),
@@ -51,6 +57,20 @@ minetest.register_globalstep(function(dtime) -- Idle Hum/Crackle
             end
         end
         t=0
+    end
+end)
+
+local armor_groups = { fleshy = 10 }
+
+minetest.register_globalstep(function(dtime) -- Blocking
+    for _,player in ipairs(minetest.get_connected_players()) do
+        if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_"..type.."_"..color.."_on" then
+            if player:get_player_control().LMB == true then
+                player:set_armor_groups(armor_groups)
+            else
+                player:set_armor_groups({fleshy=player_armor[player:get_player_name()].fleshy})
+            end
+        end
     end
 end)
 
