@@ -5,6 +5,9 @@
 
 force_ability = {}
 ability_cooldown = {}
+stunned = {}
+floating = {}
+player_physics = {}
 
 minetest.register_privilege("force_abilities", {
 	description = "Allows player touse Force Abilities",
@@ -14,11 +17,16 @@ minetest.register_privilege("force_abilities", {
 minetest.register_on_joinplayer(function(player)
     ability_cooldown[player:get_player_name()] = 0.0
     force_ability[player:get_player_name()] = {}
+    stunned[player:get_player_name()] = false
+    floating[player:get_player_name()] = false
+    player_physics[player:get_player_name()] = player:get_physics_override()
 end)
 
 minetest.register_on_leaveplayer(function(player)
     ability_cooldown[player:get_player_name()] = nil
     force_ability[player:get_player_name()] = nil
+    floating[player:get_player_name()] = nil
+    stunned[player:get_player_name()] = nil
 end)
 
 function cooldown(player,duration)
@@ -26,6 +34,7 @@ function cooldown(player,duration)
     ability_cooldown[playername] = duration
     minetest.after(duration,function()
         ability_cooldown[playername] = 0.0
+        minetest.chat_send_player(playername, "Force Cooldown is up")
     end)
     return ability_cooldown[playername]
 end
@@ -103,7 +112,7 @@ function force_choke(player) -- Lift a Player off the ground and slowly choke th
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
             pointedobject:add_player_velocity({x=0,y=5,z=0})
-            pointedobject:set_physics_override(0.1,0.1,0.1,false,false,false)
+            floating[pointedobject:get_player_name()] = true
             pointedobject:punch(player,1.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 1}},nil)
             minetest.after(1,function()
                 pointedobject:punch(player,1.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 1}},nil)
@@ -145,13 +154,45 @@ function force_stun(player) -- Freeze Players in place for 5 seconds
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
-            pointedobject:set_physics_override(-0.01,-0.01,-0.01,false,false,false)
+            stunned[pointedobject:get_player_name()] = true
             minetest.after(5,function()
-                pointedobject:set_physics_override(1.0,1.0,1.0,true,true,false)
+                stunned[pointedobject:get_player_name()] = false
             end)
             cooldown(player,20)
         end
     end
+end
+
+---------------
+-- Overrides --
+---------------
+
+function adv_lightsabers.stun()
+    for _,player in ipairs(minetest.get_connected_players()) do
+        local playername = player:get_player_name()
+        if stunned[playername] == true then
+            player:set_physics_override({speed = 0})
+            minetest.after(10,function()
+                stunned[player:get_player_name()] = false
+                player:set_physics_override({speed = player_physics[player].speed})
+            end)
+        end
+	end
+end
+
+function adv_lightsabers.levitate()
+    for _,player in ipairs(minetest.get_connected_players()) do
+        local playername = player:get_player_name()
+        if floating[playername] == true then
+            player:set_physics_override({speed = 0, gravity = 0})
+            minetest.after(4,function()
+                floating[player:get_player_name()] = false
+                player:set_physics_override({speed = player_physics[player:get_player_name()].speed,
+                gravity = player_physics[player:get_player_name()].gravity
+            })
+            end)
+        end
+	end
 end
 
 ----------
@@ -246,4 +287,6 @@ end)
 
 minetest.register_globalstep(function(dtime)
     adv_lightsabers.force_menu()
+    adv_lightsabers.stun()
+    adv_lightsabers.levitate()
 end)
