@@ -174,7 +174,7 @@ function adv_lightsabers.stun()
             player:set_physics_override({speed = 0})
             minetest.after(10,function()
                 stunned[player:get_player_name()] = false
-                player:set_physics_override({speed = player_physics[player].speed})
+                player:set_physics_override({speed = player_physics[player:get_player_name()].speed})
             end)
         end
 	end
