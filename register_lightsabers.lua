@@ -233,8 +233,7 @@ function adv_lightsabers:register_lightsaber(type,color)
 
         minetest.register_craftitem("adv_lightsabers:lightsaber_single_"..color.."_on", {
             description = "Lightsaber",
-            inventory_image = "adv_lightsabers_hilt_single_inv.png",
-            wield_image = "adv_lightsabers_blade_single_"..color..".png^adv_lightsabers_hilt_single.png",
+            inventory_image = "adv_lightsabers_blade_single_"..color..".png^adv_lightsabers_hilt_single.png",
             wield_scale = {x = 2,y = 2,z = 1},
             stack_max = 1,
             on_use = function(itemstack,player,pointed_thing)
@@ -284,8 +283,7 @@ function adv_lightsabers:register_lightsaber(type,color)
 
         minetest.register_craftitem("adv_lightsabers:lightsaber_cross_"..color.."_on", {
             description = "Crossguarded Lightsaber",
-            inventory_image = "adv_lightsabers_hilt_cross_inv.png",
-            wield_image = "adv_lightsabers_blade_cross_"..color..".png^adv_lightsabers_hilt_cross.png",
+            inventory_image = "adv_lightsabers_blade_cross_"..color..".png^adv_lightsabers_hilt_cross.png",
             wield_scale = {x = 2,y = 2,z = 1},
             stack_max = 1,
             on_use = function(itemstack,player,pointed_thing)
@@ -335,8 +333,7 @@ function adv_lightsabers:register_lightsaber(type,color)
 
         minetest.register_craftitem("adv_lightsabers:lightsaber_double_"..color.."_on", {
             description = "Lightsaber",
-            inventory_image = "adv_lightsabers_hilt_double_inv.png",
-            wield_image = "adv_lightsabers_hilt_double.png^adv_lightsabers_blade_double_"..color..".png",
+            inventory_image = "adv_lightsabers_hilt_double.png^adv_lightsabers_blade_double_"..color..".png",
             wield_scale = {x = 4,y = 4,z = 1},
             stack_max = 1,
             on_use = function(itemstack,player,pointed_thing)
