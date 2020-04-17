@@ -4,7 +4,6 @@
 ------- Ver 1.1 ----------
 
 local adv_lightsabers = {}
-local force_ability = {}
 local player_armor = {}
 
 minetest.register_on_joinplayer(function(player)
@@ -246,11 +245,8 @@ function adv_lightsabers.register_lightsaber(type,color)
             end,
             on_secondary_use = function(itemstack,player)
                 if player:get_player_control().sneak == true then
-                    local playername = player:get_player_name()
-                    if force_ability[playername] == "saber_throw" then
-                        saber_throw(itemstack,player,type,color)
-                        return itemstack
-                    end
+                    saber_throw(itemstack,player,type,color)
+                    return itemstack
                 else
                     local deactivate = "adv_lightsabers_deactivate"
                     itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_off")
@@ -297,11 +293,8 @@ function adv_lightsabers.register_lightsaber(type,color)
             end,
             on_secondary_use = function(itemstack,player)
                 if player:get_player_control().sneak == true then
-                    local playername = player:get_player_name()
-                    if force_ability[playername] == "saber_throw" then
-                        saber_throw(itemstack,player,type,color)
-                        return itemstack
-                    end
+                    saber_throw(itemstack,player,type,color)
+                    return itemstack
                 else
                     local deactivate = "adv_lightsabers_deactivate_cross"
                     itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_off")
@@ -348,11 +341,8 @@ function adv_lightsabers.register_lightsaber(type,color)
             end,
             on_secondary_use = function(itemstack,player)
                 if player:get_player_control().sneak == true then
-                    local playername = player:get_player_name()
-                    if force_ability[playername] == "saber_throw" then
-                        saber_throw(itemstack,player,type,color)
-                        return itemstack
-                    end
+                    saber_throw(itemstack,player,type,color)
+                    return itemstack
                 else
                     local deactivate = "adv_lightsabers_deactivate"
                     itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_off")
