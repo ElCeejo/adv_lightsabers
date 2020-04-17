@@ -239,7 +239,7 @@ function adv_lightsabers.register_lightsaber(type,color)
             wield_image = "adv_lightsabers_blade_single_"..color..".png^adv_lightsabers_hilt_single.png",
             wield_scale = {x = 2,y = 2,z = 1},
             stack_max = 1,
-            on_use = function(player,pointed_thing)
+            on_use = function(_,player,pointed_thing)
                 local swing = "adv_lightsabers_swing"
                 local clash = "adv_lightsabers_clash"
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
@@ -290,7 +290,7 @@ function adv_lightsabers.register_lightsaber(type,color)
             wield_image = "adv_lightsabers_blade_cross_"..color..".png^adv_lightsabers_hilt_cross.png",
             wield_scale = {x = 2,y = 2,z = 1},
             stack_max = 1,
-            on_use = function(player,pointed_thing)
+            on_use = function(_,player,pointed_thing)
                 local swing = "adv_lightsabers_swing_cross"
                 local clash = "adv_lightsabers_clash_cross"
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
@@ -341,7 +341,7 @@ function adv_lightsabers.register_lightsaber(type,color)
             wield_image = "adv_lightsabers_hilt_double.png^adv_lightsabers_blade_double_"..color..".png",
             wield_scale = {x = 4,y = 4,z = 1},
             stack_max = 1,
-            on_use = function(player,pointed_thing)
+            on_use = function(_,player,pointed_thing)
                 local swing = "adv_lightsabers_swing"
                 local clash = "adv_lightsabers_clash"
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
@@ -370,3 +370,39 @@ function adv_lightsabers.register_lightsaber(type,color)
         })
     end
 end
+
+-- Red Single Blade Lightsaber --
+
+adv_lightsabers.register_lightsaber("single","red")
+
+-- Green Single Blade Lightsaber --
+
+adv_lightsabers.register_lightsaber("single","green")
+
+-- Blue Single Blade Lightsaber --
+
+adv_lightsabers.register_lightsaber("single","blue")
+
+-- Red Crossguarded Lightsaber --
+
+adv_lightsabers.register_lightsaber("cross","red")
+
+-- Green Crossguarded Lightsaber --
+
+adv_lightsabers.register_lightsaber("cross","green")
+
+-- Blue Crossguarded Lightsaber --
+
+adv_lightsabers.register_lightsaber("cross","blue")
+
+-- Red Double Bladed Lightsaber --
+
+adv_lightsabers.register_lightsaber("double","red")
+
+-- Green Double Bladed Lightsaber --
+
+adv_lightsabers.register_lightsaber("double","green")
+
+-- Blue Double Bladed Lightsaber --
+
+adv_lightsabers.register_lightsaber("double","blue")

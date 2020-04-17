@@ -3,8 +3,6 @@
 --------------------------
 ------- Ver 1.1 ----------
 
-local default = {}
-
 minetest.register_node("adv_lightsabers:kyber_ore", {
 	description = "Kyber Ore",
 	tiles = {"default_stone.png^adv_lightsabers_kyber_ore.png"},
