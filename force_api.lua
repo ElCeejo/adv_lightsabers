@@ -3,11 +3,11 @@
 --------------------------
 ------- Ver 1.1 ----------
 
-force_ability = {}
-ability_cooldown = {}
-stunned = {}
-floating = {}
-player_physics = {}
+local force_ability = {}
+local ability_cooldown = {}
+local stunned = {}
+local floating = {}
+local player_physics = {}
 
 minetest.register_privilege("force_abilities", {
 	description = "Allows player touse Force Abilities",
@@ -29,7 +29,7 @@ minetest.register_on_leaveplayer(function(player)
     stunned[player:get_player_name()] = nil
 end)
 
-function cooldown(player,duration)
+local function cooldown(player,duration)
     local playername = player:get_player_name()
     ability_cooldown[playername] = duration
     minetest.after(duration,function()
@@ -44,7 +44,7 @@ end
 -- Menu Formspec --
 -------------------
 
-function adv_lightsabers.force_menu_form(player)
+local function force_menu_form()
     local formspec = {
         "size[6,3.476]",
         "real_coordinates[true]",
@@ -61,8 +61,8 @@ function adv_lightsabers.force_menu_form(player)
     return table.concat(formspec, "")
 end
 
-function adv_lightsabers.show_force_menu(player)
-    minetest.show_formspec(player, "adv_lightsabers:force_menu", adv_lightsabers.force_menu_form(player))
+local function show_force_menu(player)
+    minetest.show_formspec(player, "adv_lightsabers:force_menu", force_menu_form(player))
 end
 
 --------------------------------------
@@ -89,14 +89,14 @@ end
 -- Force Abilities --
 ---------------------
 
-function force_jump(player) -- Heightened Jump
+local function force_jump(player) -- Heightened Jump
     if player:get_player_control().sneak == true and player:get_player_control().jump == true then
         player:add_player_velocity({x=0,y=8,z=0})
         cooldown(player,20)
     end
 end
 
-function force_push(player) -- Push entities a far distance
+local function force_push(player) -- Push entities a far distance
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
@@ -107,7 +107,7 @@ function force_push(player) -- Push entities a far distance
     end
 end
 
-function force_choke(player) -- Lift a Player off the ground and slowly choke them
+local function force_choke(player) -- Lift a Player off the ground and slowly choke them
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
@@ -131,7 +131,7 @@ function force_choke(player) -- Lift a Player off the ground and slowly choke th
     end
 end
 
-function force_dash(player) -- Give yourself a short but quick burst of speed
+local function force_dash(player) -- Give yourself a short but quick burst of speed
     if player:get_player_control().sneak == true
     and player:get_player_control().up == true
     and player:get_player_control().down == true then
@@ -142,7 +142,7 @@ function force_dash(player) -- Give yourself a short but quick burst of speed
     end
 end
 
-function force_heal(player) -- Heal yourself by 4 hearts
+local function force_heal(player) -- Heal yourself by 4 hearts
     if player:get_player_control().sneak == true and player:get_player_control().RMB then
         local hp = player:get_hp()
         player:set_hp(hp + 8)
@@ -150,7 +150,7 @@ function force_heal(player) -- Heal yourself by 4 hearts
     end
 end
 
-function force_stun(player) -- Freeze Players in place for 5 seconds
+local function force_stun(player) -- Freeze Players in place for 5 seconds
     local pointedobject = ray_pointed_thing(player)
     if player:get_player_control().sneak == true and player:get_player_control().LMB == true then
         if pointedobject and pointedobject:is_player() then
@@ -167,7 +167,7 @@ end
 -- Overrides --
 ---------------
 
-function adv_lightsabers.stun()
+local function stun()
     for _,player in ipairs(minetest.get_connected_players()) do
         local playername = player:get_player_name()
         if stunned[playername] == true then
@@ -180,7 +180,7 @@ function adv_lightsabers.stun()
 	end
 end
 
-function adv_lightsabers.levitate()
+local function levitate()
     for _,player in ipairs(minetest.get_connected_players()) do
         local playername = player:get_player_name()
         if floating[playername] == true then
@@ -199,14 +199,14 @@ end
 -- Menu --
 ----------
 
-function adv_lightsabers.force_menu()
+local function force_menu()
     for _,player in ipairs(minetest.get_connected_players()) do
         if minetest.check_player_privs(player:get_player_name(), {force_abilities = true}) then
             local playername = player:get_player_name()
             if player:get_player_control().LMB == true
             and player:get_player_control().up == true
             and player:get_player_control().down == true then
-                adv_lightsabers.show_force_menu(player:get_player_name())
+                show_force_menu(player:get_player_name())
             end
             if force_ability[playername] == "force_jump" and ability_cooldown[playername] == 0.0 then
                 force_jump(player)
@@ -285,8 +285,8 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
     end
 end)
 
-minetest.register_globalstep(function(dtime)
-    adv_lightsabers.force_menu()
-    adv_lightsabers.stun()
-    adv_lightsabers.levitate()
+minetest.register_globalstep(function()
+    force_menu()
+    stun()
+    levitate()
 end)

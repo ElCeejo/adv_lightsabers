@@ -3,6 +3,8 @@
 --------------------------
 ------- Ver 1.1 ----------
 
+local adv_lightsabers = {}
+
 -- Red Single Blade Lightsaber --
 
 adv_lightsabers:register_lightsaber("single","red")

@@ -3,9 +3,9 @@
 --------------------------
 ------- Ver 1.1 ----------
 
-colors={"green","blue","red"}
+local colors={"green","blue","red"}
 
-hilts={"single","cross","double"}
+local hilts={"single","cross","double"}
 
 minetest.register_craftitem("adv_lightsabers:lightsaber_internals", { -- Lightsaber Internals
     description = "Lightsaber Internals",
@@ -19,7 +19,7 @@ minetest.register_craftitem("adv_lightsabers:kyber_crystal", { -- Uncolored Ligh
 })
 
 for _,color in ipairs(colors) do
-    for n,hilt in ipairs(hilts) do
+    for _,hilt in ipairs(hilts) do
 minetest.register_craftitem("adv_lightsabers:kyber_crystal_"..color, { -- Colored Kyber Crystal
     description = "Kyber Crystal",
     inventory_image = "adv_lightsabers_kyber_crystal_"..color..".png"

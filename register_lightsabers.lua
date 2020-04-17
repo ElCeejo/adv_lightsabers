@@ -3,7 +3,9 @@
 --------------------------
 ------- Ver 1.1 ----------
 
-player_armor = {}
+local adv_lightsabers = {}
+local force_ability = {}
+local player_armor = {}
 
 minetest.register_on_joinplayer(function(player)
     player_armor[player:get_player_name()] = player:get_armor_groups()
@@ -36,12 +38,12 @@ function adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
     end
 end
 
-colors={"green","blue","red"}
+local colors={"green","blue","red"}
 
-hilts={"single","cross","double"}
+local hilts={"single","cross","double"}
 
 for _,color in ipairs(colors) do
-    for n,type in ipairs(hilts) do
+    for _,type in ipairs(hilts) do
 
 local t = 0
 
@@ -62,7 +64,7 @@ end)
 
 local armor_groups = { fleshy = 10 }
 
-minetest.register_globalstep(function(dtime) -- Blocking
+minetest.register_globalstep(function() -- Blocking
     for _,player in ipairs(minetest.get_connected_players()) do
         if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_"..type.."_"..color.."_on" then
             if player:get_player_control().LMB == true then
@@ -203,7 +205,7 @@ minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent"
     end
 end
 
-function adv_lightsabers:saber_throw(itemstack,player,type,color)
+local function saber_throw(itemstack,player,type,color)
     local pos = player:get_pos()
 	pos.y = pos.y + 1
 	local dir = player:get_look_dir()
@@ -213,7 +215,7 @@ function adv_lightsabers:saber_throw(itemstack,player,type,color)
     return itemstack
 end
 
-function adv_lightsabers:register_lightsaber(type,color)
+function adv_lightsabers.register_lightsaber(type,color)
 
     -- Single Blade Lightsaber
 
@@ -223,7 +225,7 @@ function adv_lightsabers:register_lightsaber(type,color)
             description = "Lightsaber",
             inventory_image = "adv_lightsabers_hilt_single_inv.png",
             stack_max = 1,
-            on_use = function(itemstack,player,pointed_thing)
+            on_use = function(itemstack,player)
                 local activate = "adv_lightsabers_activate"
                 itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_on")
                 adv_lightsabers.play_sound(player,activate)
@@ -237,16 +239,16 @@ function adv_lightsabers:register_lightsaber(type,color)
             wield_image = "adv_lightsabers_blade_single_"..color..".png^adv_lightsabers_hilt_single.png",
             wield_scale = {x = 2,y = 2,z = 1},
             stack_max = 1,
-            on_use = function(itemstack,player,pointed_thing)
+            on_use = function(player,pointed_thing)
                 local swing = "adv_lightsabers_swing"
                 local clash = "adv_lightsabers_clash"
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
             end,
-            on_secondary_use = function(itemstack,player,pointed_thing)
+            on_secondary_use = function(itemstack,player)
                 if player:get_player_control().sneak == true then
                     local playername = player:get_player_name()
                     if force_ability[playername] == "saber_throw" then
-                        adv_lightsabers:saber_throw(itemstack,player,type,color)
+                        saber_throw(itemstack,player,type,color)
                         return itemstack
                     end
                 else
@@ -256,7 +258,7 @@ function adv_lightsabers:register_lightsaber(type,color)
                     return itemstack
                 end
             end,
-            on_place = function(itemstack,player,pointed_thing)
+            on_place = function(itemstack,player)
                 local deactivate = "adv_lightsabers_deactivate"
                 itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_off")
                 adv_lightsabers.play_sound(player,deactivate)
@@ -274,7 +276,7 @@ function adv_lightsabers:register_lightsaber(type,color)
             description = "Crossguarded Lightsaber",
             inventory_image = "adv_lightsabers_hilt_cross_inv.png",
             stack_max = 1,
-            on_use = function(itemstack,player,pointed_thing)
+            on_use = function(itemstack,player)
                 local activate = "adv_lightsabers_activate_cross"
                 itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_on")
                 adv_lightsabers.play_sound(player,activate)
@@ -288,16 +290,16 @@ function adv_lightsabers:register_lightsaber(type,color)
             wield_image = "adv_lightsabers_blade_cross_"..color..".png^adv_lightsabers_hilt_cross.png",
             wield_scale = {x = 2,y = 2,z = 1},
             stack_max = 1,
-            on_use = function(itemstack,player,pointed_thing)
+            on_use = function(player,pointed_thing)
                 local swing = "adv_lightsabers_swing_cross"
                 local clash = "adv_lightsabers_clash_cross"
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
             end,
-            on_secondary_use = function(itemstack,player,pointed_thing)
+            on_secondary_use = function(itemstack,player)
                 if player:get_player_control().sneak == true then
                     local playername = player:get_player_name()
                     if force_ability[playername] == "saber_throw" then
-                        adv_lightsabers:saber_throw(itemstack,player,type,color)
+                        saber_throw(itemstack,player,type,color)
                         return itemstack
                     end
                 else
@@ -307,7 +309,7 @@ function adv_lightsabers:register_lightsaber(type,color)
                     return itemstack
                 end
             end,
-            on_place = function(itemstack,player,pointed_thing)
+            on_place = function(itemstack,player)
                 local deactivate = "adv_lightsabers_deactivate_cross"
                 itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_off")
                 adv_lightsabers.play_sound(player,deactivate)
@@ -325,7 +327,7 @@ function adv_lightsabers:register_lightsaber(type,color)
             description = "Double Bladed Lightsaber",
             inventory_image = "adv_lightsabers_hilt_double_inv.png",
             stack_max = 1,
-            on_use = function(itemstack,player,pointed_thing)
+            on_use = function(itemstack,player)
                 local activate = "adv_lightsabers_activate"
                 itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_on")
                 adv_lightsabers.play_sound(player,activate)
@@ -339,17 +341,16 @@ function adv_lightsabers:register_lightsaber(type,color)
             wield_image = "adv_lightsabers_hilt_double.png^adv_lightsabers_blade_double_"..color..".png",
             wield_scale = {x = 4,y = 4,z = 1},
             stack_max = 1,
-            on_use = function(itemstack,player,pointed_thing)
+            on_use = function(player,pointed_thing)
                 local swing = "adv_lightsabers_swing"
                 local clash = "adv_lightsabers_clash"
                 adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
             end,
-            on_secondary_use = function(itemstack,player,pointed_thing)
+            on_secondary_use = function(itemstack,player)
                 if player:get_player_control().sneak == true then
                     local playername = player:get_player_name()
                     if force_ability[playername] == "saber_throw" then
-                        adv_lightsabers:saber_throw(itemstack,player,type,color)
-                        ability_cooldown[playername] = 5
+                        saber_throw(itemstack,player,type,color)
                         return itemstack
                     end
                 else
@@ -359,7 +360,7 @@ function adv_lightsabers:register_lightsaber(type,color)
                     return itemstack
                 end
             end,
-            on_place = function(itemstack,player,pointed_thing)
+            on_place = function(itemstack,player)
                 local deactivate = "adv_lightsabers_deactivate"
                 itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_off")
                 adv_lightsabers.play_sound(player,deactivate)
