@@ -3,13 +3,13 @@
 --------------------------
 ------- Ver 1.1 ----------
 
-local adv_lightsabers = {}
-local force_ability = {}
-local player_armor = {}
+player_armor = {}
 
-minetest.register_on_joinplayer(function(player)
-    player_armor[player:get_player_name()] = player:get_armor_groups()
-end)
+minetest.register_on_joinplayer(
+    function(player)
+        player_armor[player:get_player_name()] = player:get_armor_groups()
+    end
+)
 
 function adv_lightsabers.play_sound(player,soundfile)
 	minetest.sound_play(soundfile,{
@@ -20,251 +20,281 @@ function adv_lightsabers.play_sound(player,soundfile)
     })
 end
 
-function adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
+function adv_lightsabers.lightsaber_attack(player, pointed_thing, swing, clash)
     adv_lightsabers.play_sound(player,swing)
     if pointed_thing.type == "object" and pointed_thing.ref:is_player() then
         local pointed_weapon = pointed_thing.ref:get_wielded_item():get_name()
+
         if minetest.registered_items[pointed_weapon].groups.lightsaber == 1
         and pointed_thing.ref:get_player_control().LMB == true then
             adv_lightsabers.play_sound(player,clash)
         else
-            pointed_thing.ref:punch(player,1.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 8}},nil)
+            pointed_thing.ref:punch(player, 1.0, {full_punch_interval = 0.1, damage_groups = {fleshy = 8}}, nil)
             local dir = player:get_look_dir()
             dir.y = dir.y * 1.5
-            pointed_thing.ref:add_player_velocity(vector.multiply(dir,5))
+            pointed_thing.ref:add_player_velocity(vector.multiply(dir, 5))
         end
     elseif pointed_thing.type == "object" and not pointed_thing.ref:is_player() then
-        pointed_thing.ref:punch(player,1.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 8}},nil)
+        pointed_thing.ref:punch(player, 1.0, {full_punch_interval = 0.1, damage_groups = {fleshy = 8}}, nil)
     end
 end
 
-local colors={"green","blue","red"}
+colors={"green","blue","red"}
 
-local hilts={"single","cross","double"}
+hilts={"single","cross","double"}
 
-for _,color in ipairs(colors) do
-    for _,type in ipairs(hilts) do
+for _, color in ipairs(colors) do
+    for n, type in ipairs(hilts) do
 
-local t = 0
+        local t = 0
 
-minetest.register_globalstep(function(dtime) -- Idle Hum/Crackle
-    t=t+dtime
-    if t>1.3 then
-        for _,player in ipairs(minetest.get_connected_players()) do
-            if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_cross_"..color.."_on" then
-                adv_lightsabers.play_sound(player,"adv_lightsabers_idle_cross")
-            elseif player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_single_"..color.."_on"
-            or player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_double_"..color.."_on" then
-                adv_lightsabers.play_sound(player,"adv_lightsabers_idle")
+        minetest.register_globalstep(function(dtime) -- Idle Hum/Crackle
+            t = t + dtime
+            if t > 1.3 then
+                for _, player in ipairs(minetest.get_connected_players()) do
+                    if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_cross_" .. color .. "_on" then
+                        adv_lightsabers.play_sound(player, "adv_lightsabers_idle_cross")
+                    elseif player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_single_" .. color .. "_on"
+                        or player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_double_" .. color .. "_on" then
+                        adv_lightsabers.play_sound(player, "adv_lightsabers_idle")
+                    end
+                end
+                t = 0
+
+            end
+        end)
+
+        local armor_groups = {fleshy = 10}
+
+        --Blocking
+        minetest.register_globalstep(
+            function(dtime)
+                for _, player in ipairs(minetest.get_connected_players()) do
+                    if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_" .. type .. "_" .. color .. "_on" then
+                        if player:get_player_control().LMB == true then
+                            player:set_armor_groups(armor_groups)
+                        else
+                            player:set_armor_groups({fleshy = player_armor[player:get_player_name()].fleshy})
+                        end
+                    end
+                end
+            end
+        )
+
+        local function remove_self(self, pos) -- Remove lightsaber
+            self.removing = true
+            self.object:remove()
+            if not self.returned then
+                minetest.add_item(pos,"adv_lightsabers:lightsaber_" .. type .. "_" .. color .. "_off")
             end
         end
-        t=0
-    end
-end)
 
-local armor_groups = { fleshy = 10 }
-
-minetest.register_globalstep(function() -- Blocking
-    for _,player in ipairs(minetest.get_connected_players()) do
-        if player:get_wielded_item():get_name() == "adv_lightsabers:lightsaber_"..type.."_"..color.."_on" then
-            if player:get_player_control().LMB == true then
-                player:set_armor_groups(armor_groups)
-            else
-                player:set_armor_groups({fleshy=player_armor[player:get_player_name()].fleshy})
-            end
-        end
-    end
-end)
-
-local function remove_self(self,pos) -- Remove lightsaber
-    self.removing = true
-    self.object:remove()
-    if not self.returned then
-        minetest.add_item(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_off")
-    end
-end
-
-local function is_owner_at_pos(self,pos) -- Check if Lightsaber owner is at current position
-    for _,player in pairs(minetest.get_objects_inside_radius(pos,1.5)) do
-        if player:is_player() and player:get_player_name() == self.owner then
-            return true, player
-        end
-    end
-end
-
-local function return_to_owner(self,pos,vel) -- Return to Owner
-    local owner = minetest.get_player_by_name(self.owner)
-    if not owner or self.owner == nil then remove_self(self,pos) return end
-    local owner_pos = owner:get_pos()
-    owner_pos.y = owner_pos.y + 1
-    local dir = vector.direction(pos,owner_pos)
-    for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
-        if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
-            entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-        end
-        local luaentity = entity:get_luaentity() -- Punch Mob
-        if luaentity and not self.removing then
-            if luaentity.name ~= self.object:get_luaentity().name then
-                if entity:get_armor_groups().fleshy then
-                    entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
+        local function is_owner_at_pos(self, pos) -- Check if Lightsaber owner is at current position
+            for _, player in pairs(minetest.get_objects_inside_radius(pos, 1.5)) do
+                if player:is_player() and player:get_player_name() == self.owner then
+                    return true, player
                 end
             end
         end
-    end
-    self.returning_to_owner = true
-    self.object:set_velocity(vector.multiply(dir,vel or 15))
-    local get_owner, player = is_owner_at_pos(self,pos)
-    if get_owner then
-        self.removing = true
-        if player:get_wielded_item():get_name() == "" then
-            player:set_wielded_item("adv_lightsabers:lightsaber_"..type.."_"..color.."_on")
-            self.returned = true
-            self.object:remove()
-        elseif player:get_wielded_item():get_name() ~= "" then
-            remove_self(self,pos)
-        end
-    end
-end
 
-local function punch_entities(self,pos,dist) -- Punch Players and Entities
-    for _,entity in pairs(minetest.get_objects_inside_radius(pos,2)) do
-        if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
-            entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-            if dist > 10 then
-                return_to_owner(self,pos,15)
-            else
-                return_to_owner(self,pos,7.5)
-            end
-            return
-        end
-        local luaentity = entity:get_luaentity()
-        if luaentity and not self.removing then -- Punch Mob
-            if luaentity.name ~= self.object:get_luaentity().name then
-                if entity:get_armor_groups().fleshy then
-                    entity:punch(self.object,2.0,{full_punch_interval = 0.1,damage_groups = {fleshy = 6}},nil)
-                    if dist > 10 then
-                        return_to_owner(self,pos,15)
-                    else
-                        return_to_owner(self,pos,7.5)
+        local function return_to_owner(self,pos,vel) -- Return to Owner
+            local owner = minetest.get_player_by_name(self.owner)
+
+            if not owner or self.owner == nil then remove_self(self, pos) return end
+
+            local owner_pos = owner:get_pos()
+            owner_pos.y = owner_pos.y + 1
+            local dir = vector.direction(pos, owner_pos)
+
+            for _, entity in pairs(minetest.get_objects_inside_radius(pos, 2)) do
+                if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
+                    entity:punch(self.object, 2.0, {full_punch_interval = 0.1, damage_groups = {fleshy = 6}}, nil)
+                end
+                local luaentity = entity:get_luaentity() -- Punch Mob
+
+                if luaentity and not self.removing then
+                    if luaentity.name ~= self.object:get_luaentity().name then
+                        if entity:get_armor_groups().fleshy then
+                            entity:punch(self.object, 2.0, {full_punch_interval = 0.1, damage_groups = {fleshy = 6}}, nil)
+                        end
                     end
+                end
+            end
+            self.returning_to_owner = true
+            self.object:set_velocity(vector.multiply(dir, vel or 15))
+            local get_owner, player = is_owner_at_pos(self, pos)
+
+            if get_owner then
+                self.removing = true
+                if player:get_wielded_item():get_name() == "" then
+                    player:set_wielded_item("adv_lightsabers:lightsaber_" .. type .. "_" .. color .. "_on")
+                    self.returned = true
+                    self.object:remove()
+                elseif player:get_wielded_item():get_name() ~= "" then
+                    remove_self(self, pos)
+                end
+            end
+        end
+
+        local function punch_entities(self,pos,dist) -- Punch Players and Entities
+            for _, entity in pairs(minetest.get_objects_inside_radius(pos, 2)) do
+                if entity:is_player() and entity:get_player_name() ~= self.owner then -- Punch Player
+                    entity:punch(self.object, 2.0, {full_punch_interval = 0.1, damage_groups = {fleshy = 6}}, nil)
+                    if dist > 10 then
+                        return_to_owner(self, pos, 15)
+                    else
+                        return_to_owner(self, pos, 7.5)
+                    end
+
                     return
                 end
+                local luaentity = entity:get_luaentity()
+
+                if luaentity and not self.removing then -- Punch Mob
+                    if luaentity.name ~= self.object:get_luaentity().name then
+                        if entity:get_armor_groups().fleshy then
+                            entity:punch(self.object, 2.0, {full_punch_interval = 0.1, damage_groups = {fleshy = 6}}, nil)
+                            if dist > 10 then
+                                return_to_owner(self, pos, 15)
+                            else
+                                return_to_owner(self, pos, 7.5)
+                            end
+
+                            return
+                        end
+                    end
+                end
             end
         end
+
+        minetest.register_entity("adv_lightsabers:lightsaber_" .. type .. "_" .. color .. "_ent", { -- Register entity
+            physical = false,
+            visual = "wielditem",
+            visual_size = {x = 0.25, y = 0.25, z = 0.25},
+            textures = {"adv_lightsabers:lightsaber_"  ..  type  ..  "_"  ..  color  ..  "_on"},
+            collisionbox = {-0.125, -0.125, -0.125, 0.125, 0.125, 0.125},
+            glow = 10,
+            owner = "",
+            timer = 0,
+
+            on_activate = function(self)
+                self.object:set_armor_groups({immortal = 1})
+                local pos = self.object:get_pos()
+
+                for _, player in pairs(minetest.get_objects_inside_radius(pos, 1.0)) do
+                    if player:is_player() then
+                        local name = player:get_player_name()
+                        self.owner = name
+                    end
+                end
+                local rot = self.object:get_rotation()
+                self.object:set_rotation({x = rot.x, y = rot.y, z = -40})
+
+                if self.owner == nil then remove_self(self,pos) return end
+            end,
+
+            on_step = function(self)
+                local pos = self.object:get_pos()
+                local owner = minetest.get_player_by_name(self.owner)
+
+                if not owner or self.owner == nil then remove_self(self, pos) return end
+
+                self.timer = self.timer + 1
+                local rot = self.object:get_rotation()
+                local dist = vector.distance(pos, owner:get_pos())
+                self.object:set_rotation({x = rot.x, y = rot.y + 1, z = rot.z})
+
+                if self.timer >= 35 and self.owner ~= nil then
+                    if dist > 10 then
+                        return_to_owner(self, pos, 15)
+                    else
+                        return_to_owner(self, pos, 7.5)
+                    end
+                end
+                punch_entities(self,pos,dist)
+                local node = minetest.get_node_or_nil(pos)
+
+                if node and minetest.registered_nodes[node.name].walkable then
+                    if dist > 10 then
+                        return_to_owner(self, pos, 15)
+                    else
+                        return_to_owner(self, pos, 7.5)
+                    end
+                end
+            end,
+        })
     end
 end
 
-minetest.register_entity("adv_lightsabers:lightsaber_"..type.."_"..color.."_ent", { -- Register entity
-    physical = false,
-    visual = "wielditem",
-    visual_size = {x=.25,y=.25,z=.25},
-    textures = {"adv_lightsabers:lightsaber_"..type.."_"..color.."_on"},
-    collisionbox = {-0.125,-0.125,-0.125,0.125,0.125,0.125},
-    glow = 10,
-    owner = "",
-    timer = 0,
-    on_activate = function(self)
-        self.object:set_armor_groups({immortal=1})
-        local pos = self.object:get_pos()
-        for _,player in pairs(minetest.get_objects_inside_radius(pos,1.0)) do
-            if player:is_player() then
-                local name = player:get_player_name()
-                self.owner = name
-            end
-        end
-        local rot = self.object:get_rotation()
-        self.object:set_rotation({x=rot.x,y=rot.y,z=-40})
-        if self.owner == nil then remove_self(self,pos) return end
-    end,
-    on_step = function(self)
-        local pos = self.object:get_pos()
-        local owner = minetest.get_player_by_name(self.owner)
-        if not owner or self.owner == nil then remove_self(self,pos) return end
-        self.timer = self.timer + 1
-        local rot = self.object:get_rotation()
-        local dist = vector.distance(pos,owner:get_pos())
-        self.object:set_rotation({x=rot.x,y=rot.y+1,z=rot.z})
-        if self.timer >= 35 and self.owner ~= nil then
-            if dist > 10 then
-                return_to_owner(self,pos,15)
-            else
-                return_to_owner(self,pos,7.5)
-            end
-        end
-        punch_entities(self,pos,dist)
-        local node = minetest.get_node_or_nil(pos)
-        if node and minetest.registered_nodes[node.name].walkable then
-            if dist > 10 then
-                return_to_owner(self,pos,15)
-            else
-                return_to_owner(self,pos,7.5)
-            end
-        end
-    end,
-})
-    end
-end
-
-local function saber_throw(itemstack,player,type,color)
+function adv_lightsabers:saber_throw(itemstack, player, type, color)
     local pos = player:get_pos()
 	pos.y = pos.y + 1
 	local dir = player:get_look_dir()
-	local saber = minetest.add_entity(pos,"adv_lightsabers:lightsaber_"..type.."_"..color.."_ent")
+	local saber = minetest.add_entity(pos, "adv_lightsabers:lightsaber_" .. type .. "_" .. color .. "_ent")
 	itemstack:take_item(1)
-    saber:set_velocity(vector.multiply(dir,20))
+    saber:set_velocity(vector.multiply(dir, 20))
     return itemstack
 end
 
-function adv_lightsabers.register_lightsaber(type,color)
+function adv_lightsabers:register_lightsaber(type, color)
 
     -- Single Blade Lightsaber
 
     if type == "single" then
 
-        minetest.register_craftitem("adv_lightsabers:lightsaber_single_"..color.."_off", {
+        minetest.register_craftitem("adv_lightsabers:lightsaber_single_" .. color .. "_off", {
             description = "Lightsaber",
             inventory_image = "adv_lightsabers_hilt_single_inv.png",
             stack_max = 1,
-            on_use = function(itemstack,player)
+
+            on_use = function(itemstack, player, pointed_thing)
                 local activate = "adv_lightsabers_activate"
-                itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_on")
+                itemstack:replace("adv_lightsabers:lightsaber_single_" .. color .. "_on")
                 adv_lightsabers.play_sound(player,activate)
                 return itemstack
             end,
         })
 
-        minetest.register_craftitem("adv_lightsabers:lightsaber_single_"..color.."_on", {
+        minetest.register_craftitem("adv_lightsabers:lightsaber_single_" .. color .. "_on", {
             description = "Lightsaber",
             inventory_image = "adv_lightsabers_hilt_single_inv.png",
-            wield_image = "adv_lightsabers_blade_single_"..color..".png^adv_lightsabers_hilt_single.png",
-            wield_scale = {x = 2,y = 2,z = 1},
+            wield_image = "adv_lightsabers_blade_single_" ..color .. ".png^adv_lightsabers_hilt_single.png",
+            wield_scale = {x = 2, y = 2, z = 1},
             stack_max = 1,
-            on_use = function(_,player,pointed_thing)
+
+            on_use = function(itemstack, player, pointed_thing)
                 local swing = "adv_lightsabers_swing"
                 local clash = "adv_lightsabers_clash"
-                adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
+
+                adv_lightsabers.lightsaber_attack(player, pointed_thing, swing, clash)
             end,
-            on_secondary_use = function(itemstack,player)
+
+            on_secondary_use = function(itemstack, player, pointed_thing)
                 if player:get_player_control().sneak == true then
                     local playername = player:get_player_name()
+
                     if force_ability[playername] == "saber_throw" then
-                        saber_throw(itemstack,player,type,color)
+                        adv_lightsabers:saber_throw(itemstack, player, type, color)
                         return itemstack
                     end
                 else
                     local deactivate = "adv_lightsabers_deactivate"
-                    itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_off")
-                    adv_lightsabers.play_sound(player,deactivate)
+
+                    itemstack:replace("adv_lightsabers:lightsaber_single_" .. color .. "_off")
+                    adv_lightsabers.play_sound(player, deactivate)
                     return itemstack
                 end
             end,
-            on_place = function(itemstack,player)
+
+            on_place = function(itemstack, player, pointed_thing)
                 local deactivate = "adv_lightsabers_deactivate"
-                itemstack:replace("adv_lightsabers:lightsaber_single_"..color.."_off")
-                adv_lightsabers.play_sound(player,deactivate)
+
+                itemstack:replace("adv_lightsabers:lightsaber_single_" .. color .. "_off")
+                adv_lightsabers.play_sound(player, deactivate)
                 return itemstack
             end,
-            groups = {not_in_creative_inventory=1,lightsaber=1},
+
+            groups = {not_in_creative_inventory = 1, lightsaber = 1},
         })
     end
 
@@ -272,50 +302,60 @@ function adv_lightsabers.register_lightsaber(type,color)
 
     if type == "cross" then
 
-        minetest.register_craftitem("adv_lightsabers:lightsaber_cross_"..color.."_off", {
+        minetest.register_craftitem("adv_lightsabers:lightsaber_cross_" .. color .. "_off", {
             description = "Crossguarded Lightsaber",
             inventory_image = "adv_lightsabers_hilt_cross_inv.png",
             stack_max = 1,
-            on_use = function(itemstack,player)
+
+            on_use = function(itemstack, player, pointed_thing)
                 local activate = "adv_lightsabers_activate_cross"
-                itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_on")
-                adv_lightsabers.play_sound(player,activate)
+
+                itemstack:replace("adv_lightsabers:lightsaber_cross_" .. color .. "_on")
+                adv_lightsabers.play_sound(player, activate)
                 return itemstack
             end,
         })
 
-        minetest.register_craftitem("adv_lightsabers:lightsaber_cross_"..color.."_on", {
+        minetest.register_craftitem("adv_lightsabers:lightsaber_cross_" .. color .. "_on", {
             description = "Crossguarded Lightsaber",
             inventory_image = "adv_lightsabers_hilt_cross_inv.png",
-            wield_image = "adv_lightsabers_blade_cross_"..color..".png^adv_lightsabers_hilt_cross.png",
-            wield_scale = {x = 2,y = 2,z = 1},
+            wield_image = "adv_lightsabers_blade_cross_ ".. color .. ".png^adv_lightsabers_hilt_cross.png",
+            wield_scale = {x = 2, y = 2, z = 1},
             stack_max = 1,
-            on_use = function(_,player,pointed_thing)
+
+            on_use = function(itemstack, player, pointed_thing)
                 local swing = "adv_lightsabers_swing_cross"
                 local clash = "adv_lightsabers_clash_cross"
-                adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
+
+                adv_lightsabers.lightsaber_attack(player, pointed_thing, swing,clash)
             end,
-            on_secondary_use = function(itemstack,player)
+
+            on_secondary_use = function(itemstack, player, pointed_thing)
                 if player:get_player_control().sneak == true then
                     local playername = player:get_player_name()
+
                     if force_ability[playername] == "saber_throw" then
-                        saber_throw(itemstack,player,type,color)
+                        adv_lightsabers:saber_throw(itemstack, player, type, color)
                         return itemstack
                     end
                 else
                     local deactivate = "adv_lightsabers_deactivate_cross"
-                    itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_off")
-                    adv_lightsabers.play_sound(player,deactivate)
+
+                    itemstack:replace("adv_lightsabers:lightsaber_cross_" .. color .. "_off")
+                    adv_lightsabers.play_sound(player, deactivate)
                     return itemstack
                 end
             end,
-            on_place = function(itemstack,player)
+
+            on_place = function(itemstack, player, pointed_thing)
                 local deactivate = "adv_lightsabers_deactivate_cross"
-                itemstack:replace("adv_lightsabers:lightsaber_cross_"..color.."_off")
-                adv_lightsabers.play_sound(player,deactivate)
+                itemstack:replace("adv_lightsabers:lightsaber_cross_" .. color .. "_off")
+
+                adv_lightsabers.play_sound(player, deactivate)
                 return itemstack
             end,
-            groups = {not_in_creative_inventory=1,lightsaber=1},
+
+            groups = {not_in_creative_inventory = 1, lightsaber = 1},
         })
     end
 
@@ -323,86 +363,60 @@ function adv_lightsabers.register_lightsaber(type,color)
 
     if type == "double" then
 
-        minetest.register_craftitem("adv_lightsabers:lightsaber_double_"..color.."_off", {
+        minetest.register_craftitem("adv_lightsabers:lightsaber_double_" .. color .. "_off", {
             description = "Double Bladed Lightsaber",
             inventory_image = "adv_lightsabers_hilt_double_inv.png",
             stack_max = 1,
-            on_use = function(itemstack,player)
+
+            on_use = function(itemstack, player, pointed_thing)
                 local activate = "adv_lightsabers_activate"
-                itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_on")
-                adv_lightsabers.play_sound(player,activate)
+
+                itemstack:replace("adv_lightsabers:lightsaber_double_" .. color .. "_on")
+                adv_lightsabers.play_sound(player, activate)
                 return itemstack
             end,
         })
 
-        minetest.register_craftitem("adv_lightsabers:lightsaber_double_"..color.."_on", {
+        minetest.register_craftitem("adv_lightsabers:lightsaber_double_" .. color .. "_on", {
             description = "Lightsaber",
             inventory_image = "adv_lightsabers_hilt_double_inv.png",
-            wield_image = "adv_lightsabers_hilt_double.png^adv_lightsabers_blade_double_"..color..".png",
-            wield_scale = {x = 4,y = 4,z = 1},
+            wield_image = "adv_lightsabers_hilt_double.png^adv_lightsabers_blade_double_" .. color .. ".png",
+            wield_scale = {x = 4, y = 4, z = 1},
             stack_max = 1,
-            on_use = function(_,player,pointed_thing)
+
+            on_use = function(itemstack, player, pointed_thing)
                 local swing = "adv_lightsabers_swing"
                 local clash = "adv_lightsabers_clash"
-                adv_lightsabers.lightsaber_attack(player,pointed_thing,swing,clash)
+
+                adv_lightsabers.lightsaber_attack(player, pointed_thing, swing, clash)
             end,
-            on_secondary_use = function(itemstack,player)
+
+            on_secondary_use = function(itemstack, player, pointed_thing)
                 if player:get_player_control().sneak == true then
                     local playername = player:get_player_name()
+
                     if force_ability[playername] == "saber_throw" then
-                        saber_throw(itemstack,player,type,color)
+                        adv_lightsabers:saber_throw(itemstack, player, type, color)
+                        ability_cooldown[playername] = 5
                         return itemstack
                     end
                 else
                     local deactivate = "adv_lightsabers_deactivate"
-                    itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_off")
-                    adv_lightsabers.play_sound(player,deactivate)
+                    itemstack:replace("adv_lightsabers:lightsaber_double_" .. color .. "_off")
+                    adv_lightsabers.play_sound(player, deactivate)
                     return itemstack
                 end
             end,
-            on_place = function(itemstack,player)
+
+            on_place = function(itemstack, player, pointed_thing)
                 local deactivate = "adv_lightsabers_deactivate"
-                itemstack:replace("adv_lightsabers:lightsaber_double_"..color.."_off")
-                adv_lightsabers.play_sound(player,deactivate)
+
+                itemstack:replace("adv_lightsabers:lightsaber_double_" .. color .. "_off")
+                adv_lightsabers.play_sound(player, deactivate)
                 return itemstack
             end,
-            groups = {not_in_creative_inventory=1,lightsaber=1},
+
+            groups = {not_in_creative_inventory = 1, lightsaber = 1},
         })
     end
 end
-
--- Red Single Blade Lightsaber --
-
-adv_lightsabers.register_lightsaber("single","red")
-
--- Green Single Blade Lightsaber --
-
-adv_lightsabers.register_lightsaber("single","green")
-
--- Blue Single Blade Lightsaber --
-
-adv_lightsabers.register_lightsaber("single","blue")
-
--- Red Crossguarded Lightsaber --
-
-adv_lightsabers.register_lightsaber("cross","red")
-
--- Green Crossguarded Lightsaber --
-
-adv_lightsabers.register_lightsaber("cross","green")
-
--- Blue Crossguarded Lightsaber --
-
-adv_lightsabers.register_lightsaber("cross","blue")
-
--- Red Double Bladed Lightsaber --
-
-adv_lightsabers.register_lightsaber("double","red")
-
--- Green Double Bladed Lightsaber --
-
-adv_lightsabers.register_lightsaber("double","green")
-
--- Blue Double Bladed Lightsaber --
-
-adv_lightsabers.register_lightsaber("double","blue")
